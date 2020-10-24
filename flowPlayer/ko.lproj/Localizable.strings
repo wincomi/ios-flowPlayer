@@ -1,0 +1,198 @@
+"favorite.addedToFavorites" = "즐겨찾기에 추가됨";
+
+"albums" = "앨범";
+"album" = "앨범";
+"artists" = "아티스트";
+"artist" = "아티스트";
+"playlists" = "재생목록";
+"playlist" = "재생목록";
+"songs" = "노래";
+"song" = "노래";
+"genres" = "장르";
+"genre" = "장르";
+"composers" = "작곡가";
+"composer" = "작곡가";
+"favorites" = "즐겨찾기";
+"favorite" = "즐겨찾기";
+"files" = "파일";
+"files" = "파일";
+"search" = "검색";
+"more" = "더 보기";
+
+"unknown.with" = "Unknown %@";
+
+"sorting.default" = "기본";
+
+"songInfo" = "노래 정보";
+
+"songInfo.title" = "제목";
+"songInfo.artist" = "아티스트";
+"songInfo.albumArtist" = "앨범 아티스트";
+"songInfo.albumTitle" = "앨범";
+"songInfo.genre" = "장르";
+"songInfo.composer" = "작곡가";
+"songInfo.rating" = "선호도";
+"songInfo.playCount" = "재생 횟수";
+"songInfo.lastPlayedDate" = "최종 재생";
+"songInfo.dateAdded" = "최근 추가된 날짜";
+"songInfo.playbackDuration" = "길이";
+"songInfo.year" = "년도";
+
+"songInfo.comment" = "주석";
+"songInfo.grouping" = "그룹짓기";
+"songInfo.track" = "트랙";
+"songInfo.discNumber" = "디스크 번호";
+"songInfo.compilation" = "편집 앨범";
+
+// Legacy
+// Korean
+"Flow Player" = "Flow Player";
+
+// General
+"OK" = "확인";
+"Cancel" = "취소";
+"Yes" = "네";
+"No" = "아니오";
+"No %@" = "%@ 없음";
+"%@ do not exist." = "%@(이)가 존재하지 않습니다.";
+"%@ does not exist." = "%@(이)가 존재하지 않습니다.";
+
+"Shuffle" = "임의 재생";
+"Play" = "재생";
+
+// Tabs
+"Albums" = "앨범";
+"Album" = "앨범";
+"Artists" = "아티스트";
+"Artist" = "아티스트";
+"Playlists" = "재생목록";
+"Playlist" = "재생목록";
+"Songs" = "음악";
+"Song" = "음악";
+"Genres" = "장르";
+"Genre" = "장르";
+"Composers" = "작곡가";
+"Composer" = "작곡가";
+"Favorites" = "즐겨찾기";
+"Favorite" = "즐겨찾기";
+"Files" = "파일";
+"Files" = "파일";
+"Search" = "검색";
+"More" = "더 보기";
+
+// Unknown metadatas
+"Unknown title" = "알 수 없는 제목";
+"Unknown artist" = "알 수 없는 아티스트";
+"Unknown album" = "알 수 없는 앨범";
+"Various artists" = "다양한 아티스트";
+
+// Media library access
+"Media library access restricted by corporate or parental settings" = "미디어 보관함 접근이 거부되었습니다.";
+"Media library access denied by user" = "음악을 불러오기 위해 설정 앱에서 미디어 보관함 접근을 허용해주세요.";
+"Access denied to media library" = "미디어 보관함 접근 불가";
+"Go to settings app..." = "설정 앱으로 이동...";
+
+// Now Playing
+"There is no music currently playing." = "지금 재생 중인 음악이 없습니다.";
+"Show song info" = "이 음악의 정보 보기";
+"Show album of this song" = "이 음악의 앨범 보기";
+"Show artist of this song" = "이 음악의 아티스트 보기";
+
+
+
+
+
+// Artists
+"Display options" = "보기 옵션";
+"%lu albums" = "%lu개의 앨범";
+"Merge compilations" = "편집 앨범 모으기";
+
+// More Tab
+"Settings" = "설정";
+"Sleep timer" = "취침 예약";
+"Equalizer" = "EQ";
+"Tips & QnA" = "자주 묻는 질문과 팁";
+"Rate this app" = "앱 리뷰하기";
+"Send feedback" = "피드백 보내기";
+"About" = "정보";
+"Developer" = "앱 개발자";
+"WINCOMI_NICKNAME" = "윈컴이 (Wincomi)";
+"App icon designer" = "앱 아이콘 디자이너";
+"Touch the Edit button at the top to change the tab order." = "탭 순서를 변경하기 위해 상단의 편집 버튼을 터치해주세요.";
+"The top four items will be assigned to the tab menu." = "상단의 4개 항목이 탭 메뉴로 지정됩니다.";
+
+// Song Infomations
+"Info" = "정보";
+"Copied to pasteboard" = "클립보드에 복사되었습니다.";
+"Title" = "제목";
+"Album Artist" = "앨범 아티스트";
+"Year" = "년도";
+"Comments" = "주석";
+"Play count" = "재생 횟수";
+"Last played" = "최종 재생";
+"Rating" = "선호도";
+"Grouping" = "그룹짓기";
+"Track" = "트랙";
+"Disc number" = "디스크 번호";
+"Compilation" = "편집 앨범";
+"PlayCount" = "재생 횟수";
+"PersistentID" = "최근 추가된 날짜";
+"LastPlayedDate" = "최종 재생";
+
+// Playlists
+"New playlist" = "새로운 재생목록";
+"You can only add and delete a playlist in default music app on Apple policy." = "재생목록 추가/제거는 애플 정책상 기본 음악 앱에서만 할 수 있습니다.";
+"Go to music app..." = "음악 앱으로 이동...";
+"Add songs" = "음악 추가";
+
+// Favorites
+"Add your favorites songs." = "즐겨찾기에 추가하고 싶은 항목을 왼쪽으로 스와이프하여 즐겨찾기에 추가하세요.\n앨범을 추가할 경우 앨범을 길게 누르세요.";
+"Saved to favorites." = "즐겨찾기에 추가되었습니다.";
+"This file no longer exists in favorites." = "이 파일은 더 이상 즐겨찾기에 존재하지 않습니다,";
+"Add to favorites" = "즐겨찾기에 추가";
+"Remove from favorites" = "즐겨찾기에서 제거";
+
+// Tutorial
+"TUTORIAL_TITLE1" = "반갑습니다!";
+"TUTORIAL_DESC1" = "Flow Player은 기기 내의 음악을 보여주는 앱이며, 자체적으로 음악을 다운로드할 수 없습니다.\n직접 iTunes에서 음악을 동기화하거나 음악 파일을 직접 넣어주세요.";
+"TUTORIAL_TITLE2" = "미디어 보관함의 권한이 필요합니다.";
+"TUTORIAL_DESC2" = "기기 내의 음악을 가져오기 위해 미디어 보관함의 권한이 필요합니다. 허용하지 않을 경우 음악이 표시되지 않습니다.";
+"TUTORIAL_TITLE3" = "제발 구매 목록 삭제를 요청하지 마세요!";
+"TUTORIAL_DESC3" = "구매 목록은 따로 기기에 저장되지 않아, 기기의 용량과는 무관합니다. 또한, 개발자는 각 사용자의 구매 목록에서 앱을 삭제할 수 없습니다.\n\n3초 후에 아래 버튼이 활성화됩니다.";
+"Next" = "다음으로";
+
+// Sorting
+"Sort by..." = "정렬 방식";
+"Default" = "기본";
+
+// Files
+"File browser" = "파일 브라우저";
+"You can download and play songs from Safari to download the songs you downloaded from this app.\nIn the current version, you can control music only from the Control Center." = "iTunes 동기화를 사용하지 않고 Flow Player 앱에 음악을 직접 저장하여 재생할 수 있습니다.\n현재 버전에서는 제어 센터에서만 음악을 컨트롤할 수 있습니다.";
+"This file does not seem to be music." = "이 파일은 음악이 아닌 것 같습니다.";
+"Would you like to play it anyway?" = "그래도 재생하시겠습니까?";
+"An error has occurred." = "에러가 발생했습니다.";
+"Move" = "이동";
+"This file does not seem to be music." = "이 파일은 음악이 아닌 것 같습니다.";
+"Would you like to play it anyway?" = "그래도 재생하시겠습니까?";
+"An error has occurred." = "에러가 발생했습니다.";
+"Move" = "이동";
+"Touch the 'Move' button above to move files here." = "여기에 파일을 옮기기 위해 위의 '이동' 버튼을 터치해주세요.";
+"Create folder" = "새로운 폴더";
+"Please enter a new folder name." = "생성할 폴더 이름을 입력하세요.";
+"Delete item(s)" = "아이템 삭제";
+"Do you really want to delete this item(s)?" = "정말로 이 아이템을 삭제하시겠습니까?";
+"Rename" = "이름 변경";
+"Please enter new name." = "변경할 이름을 입력해주세요.";
+"Receive files" = "파일 받기";
+"Please enter the key you received from Send Anywhere." = "Send Anywhere에서 받은 키를 입력해주세요.";
+"Help" = "도움말";
+"Export" = "내보내기";
+"Currently in beta." = "베타 버전이므로 여러 버그가 발생할 수 있습니다.";
+
+
+// Search tab
+"Search songs, albums, and artists." = "음악, 앨범, 아티스트를 검색합니다.";
+"No search results found." = "검색 결과가 없습니다.";
+
+"Supported in iOS %@ and later." = "iOS %@ 버전 이상에서 지원합니다.";
+

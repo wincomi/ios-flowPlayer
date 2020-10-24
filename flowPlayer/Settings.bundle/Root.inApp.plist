@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>StringsTable</key>
+	<string>Root</string>
+	<key>PreferenceSpecifiers</key>
+	<array>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>Library</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Display iCloud itmes</string>
+			<key>Key</key>
+			<string>showCloudItems</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Cloud</string>
+			<key>DefaultValue</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>General</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Disable auto lock</string>
+			<key>Key</key>
+			<string>disableAutoLock</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Unlock</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Show Now Playing on selection</string>
+			<key>Key</key>
+			<string>showNowPlayingOnSelection</string>
+			<key>IASKCellImage</key>
+			<string>Tab/Songs</string>
+			<key>DefaultValue</key>
+			<true/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Music stops when the app end</string>
+			<key>Key</key>
+			<string>musicStopsAppEnd</string>
+			<key>DefaultValue</key>
+			<false/>
+			<key>IASKCellImage</key>
+			<string>Settings/Shutdown</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>Now Playing</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Lyrics alignment</string>
+			<key>Key</key>
+			<string>lyricsAlignment</string>
+			<key>DefaultValue</key>
+			<string>center</string>
+			<key>IASKCellImage</key>
+			<string>Settings/AlignLeft</string>
+			<key>Titles</key>
+			<array>
+				<string>Center</string>
+				<string>Left</string>
+				<string>Right</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>center</string>
+				<string>left</string>
+				<string>right</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Clear playback label</string>
+			<key>Key</key>
+			<string>biggerPlayingbackLabel</string>
+			<key>IASKCellImage</key>
+			<string>Settings/IncreaseFont</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSGroupSpecifier</string>
+			<key>Title</key>
+			<string>Gesture</string>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Tap</string>
+			<key>Key</key>
+			<string>gestureTap</string>
+			<key>DefaultValue</key>
+			<string>playPause</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Gesture/Tap</string>
+			<key>Titles</key>
+			<array>
+				<string>None</string>
+				<string>Play &amp; Pause</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>none</string>
+				<string>playPause</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Swipe left</string>
+			<key>Key</key>
+			<string>gestureLeft</string>
+			<key>DefaultValue</key>
+			<string>nextTrack</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Gesture/Left</string>
+			<key>Titles</key>
+			<array>
+				<string>None</string>
+				<string>Next track</string>
+				<string>Previous track</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>none</string>
+				<string>nextTrack</string>
+				<string>previousTrack</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSMultiValueSpecifier</string>
+			<key>Title</key>
+			<string>Swipe right</string>
+			<key>Key</key>
+			<string>gestureRight</string>
+			<key>DefaultValue</key>
+			<string>previousTrack</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Gesture/Right</string>
+			<key>Titles</key>
+			<array>
+				<string>None</string>
+				<string>Next track</string>
+				<string>Previous track</string>
+			</array>
+			<key>Values</key>
+			<array>
+				<string>none</string>
+				<string>nextTrack</string>
+				<string>previousTrack</string>
+			</array>
+		</dict>
+		<dict>
+			<key>Type</key>
+			<string>PSToggleSwitchSpecifier</string>
+			<key>Title</key>
+			<string>Volume gesture</string>
+			<key>Key</key>
+			<string>gestureVolume</string>
+			<key>IASKCellImage</key>
+			<string>Settings/Gesture/Volume</string>
+			<key>DefaultValue</key>
+			<false/>
+		</dict>
+	</array>
+</dict>
+</plist>

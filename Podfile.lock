@@ -1,0 +1,32 @@
+PODS:
+  - DZNEmptyDataSet (1.8.1)
+  - InAppSettingsKit (2.10)
+  - R.swift (5.0.2):
+    - R.swift.Library (~> 5.0.0)
+  - R.swift.Library (5.0.0)
+  - StatusAlert (1.1.0)
+
+DEPENDENCIES:
+  - DZNEmptyDataSet
+  - InAppSettingsKit
+  - R.swift
+  - StatusAlert
+
+SPEC REPOS:
+  https://github.com/cocoapods/specs.git:
+    - DZNEmptyDataSet
+    - InAppSettingsKit
+    - R.swift
+    - R.swift.Library
+    - StatusAlert
+
+SPEC CHECKSUMS:
+  DZNEmptyDataSet: 9525833b9e68ac21c30253e1d3d7076cc828eaa7
+  InAppSettingsKit: d965e29be941eb19857271e4625de3fba6e23c9f
+  R.swift: 81455d81467763cbd3f4d79d938d05f4ac4c0228
+  R.swift.Library: 0bf390e729bc10bb2c9e4fb78bd043164a7be4ff
+  StatusAlert: 4d6dadebf5f7abd5648fa774ef3062f2f95cc4aa
+
+PODFILE CHECKSUM: 9c26a7a2f16d086211f74e1be46b0cbce99a835a
+
+COCOAPODS: 1.5.3
