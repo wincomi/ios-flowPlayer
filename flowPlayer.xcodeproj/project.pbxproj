@@ -3,11 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 52;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		35F3F97C35C522D9092AD6EB /* Pods_flowPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BB310A9925C36B0F017FF70A /* Pods_flowPlayer.framework */; };
+		F705AD30264D2789005676D9 /* LNPopupController in Frameworks */ = {isa = PBXBuildFile; productRef = F705AD2F264D2789005676D9 /* LNPopupController */; };
+		F705AD31264D2789005676D9 /* LNPopupController in Embed Frameworks */ = {isa = PBXBuildFile; productRef = F705AD2F264D2789005676D9 /* LNPopupController */; settings = {ATTRIBUTES = (CodeSignOnCopy, ); }; };
 		F711514621B9808D0091A84C /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = F711514521B9808D0091A84C /* Settings.bundle */; };
 		F711514E21B989C60091A84C /* MoreVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = F711514D21B989C60091A84C /* MoreVC.swift */; };
 		F711515021B98FAC0091A84C /* FavoritesTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F711514F21B98FAC0091A84C /* FavoritesTableViewController.swift */; };
@@ -82,16 +84,6 @@
 		F7B3E1EC2200A6790006744B /* LibraryType.swift in Sources */ = {isa = PBXBuildFile; fileRef = F7B3E1EB2200A6780006744B /* LibraryType.swift */; };
 /* End PBXBuildFile section */
 
-/* Begin PBXContainerItemProxy section */
-		F74AA419224FA87600FC6CE0 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = F74AA415224FA87500FC6CE0 /* LNPopupController.xcodeproj */;
-			proxyType = 2;
-			remoteGlobalIDString = 39DB52E51B5823330061C589;
-			remoteInfo = LNPopupController;
-		};
-/* End PBXContainerItemProxy section */
-
 /* Begin PBXCopyFilesBuildPhase section */
 		F7814B8B2209B33B00542DBA /* Embed Frameworks */ = {
 			isa = PBXCopyFilesBuildPhase;
@@ -99,6 +91,7 @@
 			dstPath = "";
 			dstSubfolderSpec = 10;
 			files = (
+				F705AD31264D2789005676D9 /* LNPopupController in Embed Frameworks */,
 			);
 			name = "Embed Frameworks";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -128,7 +121,6 @@
 		F71151A521BC1FCD0091A84C /* SafariServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SafariServices.framework; path = System/Library/Frameworks/SafariServices.framework; sourceTree = SDKROOT; };
 		F71151A721BC2AB80091A84C /* StoreKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = StoreKit.framework; path = System/Library/Frameworks/StoreKit.framework; sourceTree = SDKROOT; };
 		F71151AF21BCDE8E0091A84C /* SettingsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsVC.swift; sourceTree = "<group>"; };
-		F74AA415224FA87500FC6CE0 /* LNPopupController.xcodeproj */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.pb-project"; name = LNPopupController.xcodeproj; path = ../GitHub/LNPopupController/LNPopupController/LNPopupController.xcodeproj; sourceTree = "<group>"; };
 		F74DE5CA220C009E00BCFB48 /* NowPlayingDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingDelegate.swift; sourceTree = "<group>"; };
 		F74DE5D0220C165600BCFB48 /* ArtistsVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtistsVC.swift; sourceTree = "<group>"; };
 		F74DE5D2220C16FD00BCFB48 /* GenresVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenresVC.swift; sourceTree = "<group>"; };
@@ -198,6 +190,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F705AD30264D2789005676D9 /* LNPopupController in Frameworks */,
 				F71151A621BC1FCE0091A84C /* SafariServices.framework in Frameworks */,
 				F761EA1E21B17689007ACD7D /* MediaPlayer.framework in Frameworks */,
 				F71151A821BC2AB80091A84C /* StoreKit.framework in Frameworks */,
@@ -237,14 +230,6 @@
 			path = Controllers;
 			sourceTree = "<group>";
 		};
-		F74AA416224FA87500FC6CE0 /* Products */ = {
-			isa = PBXGroup;
-			children = (
-				F74AA41A224FA87600FC6CE0 /* LNPopupController.framework */,
-			);
-			name = Products;
-			sourceTree = "<group>";
-		};
 		F757B9192205CEA800A4C388 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -259,7 +244,6 @@
 		F761E9F921B17505007ACD7D = {
 			isa = PBXGroup;
 			children = (
-				F74AA415224FA87500FC6CE0 /* LNPopupController.xcodeproj */,
 				F761EA0421B17505007ACD7D /* flowPlayer */,
 				F761EA0321B17505007ACD7D /* Products */,
 				F761EA1C21B17688007ACD7D /* Frameworks */,
@@ -430,6 +414,9 @@
 			dependencies = (
 			);
 			name = flowPlayer;
+			packageProductDependencies = (
+				F705AD2F264D2789005676D9 /* LNPopupController */,
+			);
 			productName = flowPlayer;
 			productReference = F761EA0221B17505007ACD7D /* Flow.app */;
 			productType = "com.apple.product-type.application";
@@ -471,30 +458,17 @@
 				ko,
 			);
 			mainGroup = F761E9F921B17505007ACD7D;
+			packageReferences = (
+				F705AD2E264D2777005676D9 /* XCRemoteSwiftPackageReference "LNPopupController" */,
+			);
 			productRefGroup = F761EA0321B17505007ACD7D /* Products */;
 			projectDirPath = "";
-			projectReferences = (
-				{
-					ProductGroup = F74AA416224FA87500FC6CE0 /* Products */;
-					ProjectRef = F74AA415224FA87500FC6CE0 /* LNPopupController.xcodeproj */;
-				},
-			);
 			projectRoot = "";
 			targets = (
 				F761EA0121B17505007ACD7D /* flowPlayer */,
 			);
 		};
 /* End PBXProject section */
-
-/* Begin PBXReferenceProxy section */
-		F74AA41A224FA87600FC6CE0 /* LNPopupController.framework */ = {
-			isa = PBXReferenceProxy;
-			fileType = wrapper.framework;
-			path = LNPopupController.framework;
-			remoteRef = F74AA419224FA87600FC6CE0 /* PBXContainerItemProxy */;
-			sourceTree = BUILT_PRODUCTS_DIR;
-		};
-/* End PBXReferenceProxy section */
 
 /* Begin PBXResourcesBuildPhase section */
 		F761EA0021B17505007ACD7D /* Resources */ = {
@@ -521,23 +495,16 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-flowPlayer/Pods-flowPlayer-frameworks.sh",
-				"${BUILT_PRODUCTS_DIR}/DZNEmptyDataSet/DZNEmptyDataSet.framework",
-				"${BUILT_PRODUCTS_DIR}/InAppSettingsKit/InAppSettingsKit.framework",
-				"${BUILT_PRODUCTS_DIR}/R.swift.Library/Rswift.framework",
-				"${BUILT_PRODUCTS_DIR}/StatusAlert/StatusAlert.framework",
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-flowPlayer/Pods-flowPlayer-frameworks-${CONFIGURATION}-input-files.xcfilelist",
 			);
 			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/DZNEmptyDataSet.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/InAppSettingsKit.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Rswift.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/StatusAlert.framework",
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-flowPlayer/Pods-flowPlayer-frameworks-${CONFIGURATION}-output-files.xcfilelist",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-flowPlayer/Pods-flowPlayer-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-flowPlayer/Pods-flowPlayer-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 		C325684BFD6F8383D2108338 /* [CP] Check Pods Manifest.lock */ = {
@@ -1102,6 +1069,25 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		F705AD2E264D2777005676D9 /* XCRemoteSwiftPackageReference "LNPopupController" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/LeoNatan/LNPopupController.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.9.6;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		F705AD2F264D2789005676D9 /* LNPopupController */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F705AD2E264D2777005676D9 /* XCRemoteSwiftPackageReference "LNPopupController" */;
+			productName = LNPopupController;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = F761E9FA21B17505007ACD7D /* Project object */;
 }

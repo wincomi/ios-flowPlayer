@@ -13,7 +13,7 @@ DEPENDENCIES:
   - StatusAlert
 
 SPEC REPOS:
-  https://github.com/cocoapods/specs.git:
+  trunk:
     - DZNEmptyDataSet
     - InAppSettingsKit
     - R.swift
@@ -29,4 +29,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 9c26a7a2f16d086211f74e1be46b0cbce99a835a
 
-COCOAPODS: 1.5.3
+COCOAPODS: 1.10.1
