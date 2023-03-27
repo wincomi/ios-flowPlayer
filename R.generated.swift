@@ -9,37 +9,146 @@ import UIKit
 
 /// This `R` struct is generated and contains references to static resources.
 struct R: Rswift.Validatable {
-  fileprivate static let applicationLocale = hostingBundle.preferredLocalizations.first.flatMap(Locale.init) ?? Locale.current
+  fileprivate static let applicationLocale = hostingBundle.preferredLocalizations.first.flatMap { Locale(identifier: $0) } ?? Locale.current
   fileprivate static let hostingBundle = Bundle(for: R.Class.self)
-  
+
+  /// Find first language and bundle for which the table exists
+  fileprivate static func localeBundle(tableName: String, preferredLanguages: [String]) -> (Foundation.Locale, Foundation.Bundle)? {
+    // Filter preferredLanguages to localizations, use first locale
+    var languages = preferredLanguages
+      .map { Locale(identifier: $0) }
+      .prefix(1)
+      .flatMap { locale -> [String] in
+        if hostingBundle.localizations.contains(locale.identifier) {
+          if let language = locale.languageCode, hostingBundle.localizations.contains(language) {
+            return [locale.identifier, language]
+          } else {
+            return [locale.identifier]
+          }
+        } else if let language = locale.languageCode, hostingBundle.localizations.contains(language) {
+          return [language]
+        } else {
+          return []
+        }
+      }
+
+    // If there's no languages, use development language as backstop
+    if languages.isEmpty {
+      if let developmentLocalization = hostingBundle.developmentLocalization {
+        languages = [developmentLocalization]
+      }
+    } else {
+      // Insert Base as second item (between locale identifier and languageCode)
+      languages.insert("Base", at: 1)
+
+      // Add development language as backstop
+      if let developmentLocalization = hostingBundle.developmentLocalization {
+        languages.append(developmentLocalization)
+      }
+    }
+
+    // Find first language for which table exists
+    // Note: key might not exist in chosen language (in that case, key will be shown)
+    for language in languages {
+      if let lproj = hostingBundle.url(forResource: language, withExtension: "lproj"),
+         let lbundle = Bundle(url: lproj)
+      {
+        let strings = lbundle.url(forResource: tableName, withExtension: "strings")
+        let stringsdict = lbundle.url(forResource: tableName, withExtension: "stringsdict")
+
+        if strings != nil || stringsdict != nil {
+          return (Locale(identifier: language), lbundle)
+        }
+      }
+    }
+
+    // If table is available in main bundle, don't look for localized resources
+    let strings = hostingBundle.url(forResource: tableName, withExtension: "strings", subdirectory: nil, localization: nil)
+    let stringsdict = hostingBundle.url(forResource: tableName, withExtension: "stringsdict", subdirectory: nil, localization: nil)
+
+    if strings != nil || stringsdict != nil {
+      return (applicationLocale, hostingBundle)
+    }
+
+    // If table is not found for requested languages, key will be shown
+    return nil
+  }
+
+  /// Load string from Info.plist file
+  fileprivate static func infoPlistString(path: [String], key: String) -> String? {
+    var dict = hostingBundle.infoDictionary
+    for step in path {
+      guard let obj = dict?[step] as? [String: Any] else { return nil }
+      dict = obj
+    }
+    return dict?[key] as? String
+  }
+
   static func validate() throws {
     try intern.validate()
   }
-  
+
+  #if os(iOS) || os(tvOS)
+  /// This `R.storyboard` struct is generated, and contains static references to 3 storyboards.
+  struct storyboard {
+    /// Storyboard `LaunchScreen`.
+    static let launchScreen = _R.storyboard.launchScreen()
+    /// Storyboard `Main`.
+    static let main = _R.storyboard.main()
+    /// Storyboard `SongInfo`.
+    static let songInfo = _R.storyboard.songInfo()
+
+    #if os(iOS) || os(tvOS)
+    /// `UIStoryboard(name: "LaunchScreen", bundle: ...)`
+    static func launchScreen(_: Void = ()) -> UIKit.UIStoryboard {
+      return UIKit.UIStoryboard(resource: R.storyboard.launchScreen)
+    }
+    #endif
+
+    #if os(iOS) || os(tvOS)
+    /// `UIStoryboard(name: "Main", bundle: ...)`
+    static func main(_: Void = ()) -> UIKit.UIStoryboard {
+      return UIKit.UIStoryboard(resource: R.storyboard.main)
+    }
+    #endif
+
+    #if os(iOS) || os(tvOS)
+    /// `UIStoryboard(name: "SongInfo", bundle: ...)`
+    static func songInfo(_: Void = ()) -> UIKit.UIStoryboard {
+      return UIKit.UIStoryboard(resource: R.storyboard.songInfo)
+    }
+    #endif
+
+    fileprivate init() {}
+  }
+  #endif
+
   /// This `R.file` struct is generated, and contains static references to 1 files.
   struct file {
     /// Resource file `Settings.bundle`.
     static let settingsBundle = Rswift.FileResource(bundle: R.hostingBundle, name: "Settings", pathExtension: "bundle")
-    
+
     /// `bundle.url(forResource: "Settings", withExtension: "bundle")`
     static func settingsBundle(_: Void = ()) -> Foundation.URL? {
       let fileResource = R.file.settingsBundle
       return fileResource.bundle.url(forResource: fileResource)
     }
-    
+
     fileprivate init() {}
   }
-  
+
   /// This `R.image` struct is generated, and contains static references to 1 images.
   struct image {
     /// Image `Close`.
     static let close = Rswift.ImageResource(bundle: R.hostingBundle, name: "Close")
-    
+
+    #if os(iOS) || os(tvOS)
     /// `UIImage(named: "Close", bundle: ..., traitCollection: ...)`
     static func close(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
       return UIKit.UIImage(resource: R.image.close, compatibleWith: traitCollection)
     }
-    
+    #endif
+
     /// This `R.image.contextualAction` struct is generated, and contains static references to 5 images.
     struct contextualAction {
       /// Image `favorite`.
@@ -52,35 +161,45 @@ struct R: Rswift.Validatable {
       static let remove = Rswift.ImageResource(bundle: R.hostingBundle, name: "ContextualAction/remove")
       /// Image `shuffle`.
       static let shuffle = Rswift.ImageResource(bundle: R.hostingBundle, name: "ContextualAction/shuffle")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "favorite", bundle: ..., traitCollection: ...)`
       static func favorite(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.contextualAction.favorite, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "info", bundle: ..., traitCollection: ...)`
       static func info(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.contextualAction.info, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "play", bundle: ..., traitCollection: ...)`
       static func play(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.contextualAction.play, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "remove", bundle: ..., traitCollection: ...)`
       static func remove(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.contextualAction.remove, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "shuffle", bundle: ..., traitCollection: ...)`
       static func shuffle(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.contextualAction.shuffle, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.likedState` struct is generated, and contains static references to 3 images.
     struct likedState {
       /// Image `Dislike`.
@@ -89,25 +208,31 @@ struct R: Rswift.Validatable {
       static let loveFilled = Rswift.ImageResource(bundle: R.hostingBundle, name: "LikedState/Love Filled")
       /// Image `Love`.
       static let love = Rswift.ImageResource(bundle: R.hostingBundle, name: "LikedState/Love")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Dislike", bundle: ..., traitCollection: ...)`
       static func dislike(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.likedState.dislike, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Love Filled", bundle: ..., traitCollection: ...)`
       static func loveFilled(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.likedState.loveFilled, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Love", bundle: ..., traitCollection: ...)`
       static func love(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.likedState.love, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.settings` struct is generated, and contains static references to 15 images.
     struct settings {
       /// Image `AlignLeft`.
@@ -140,82 +265,112 @@ struct R: Rswift.Validatable {
       static let unlock = Rswift.ImageResource(bundle: R.hostingBundle, name: "Settings/Unlock")
       /// Image `settings`.
       static let settings = Rswift.ImageResource(bundle: R.hostingBundle, name: "Settings/settings")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "AlignLeft", bundle: ..., traitCollection: ...)`
       static func alignLeft(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.alignLeft, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Cloud", bundle: ..., traitCollection: ...)`
       static func cloud(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.cloud, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Donate", bundle: ..., traitCollection: ...)`
       static func donate(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.donate, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Equalizer", bundle: ..., traitCollection: ...)`
       static func equalizer(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.equalizer, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Faq", bundle: ..., traitCollection: ...)`
       static func faq(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.faq, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "IncreaseFont", bundle: ..., traitCollection: ...)`
       static func increaseFont(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.increaseFont, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Info", bundle: ..., traitCollection: ...)`
       static func info(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.info, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Lock", bundle: ..., traitCollection: ...)`
       static func lock(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.lock, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Love", bundle: ..., traitCollection: ...)`
       static func love(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.love, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Send", bundle: ..., traitCollection: ...)`
       static func send(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.send, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Shutdown", bundle: ..., traitCollection: ...)`
       static func shutdown(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.shutdown, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "SleepTimer", bundle: ..., traitCollection: ...)`
       static func sleepTimer(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.sleepTimer, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Tap", bundle: ..., traitCollection: ...)`
       static func tap(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.tap, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Unlock", bundle: ..., traitCollection: ...)`
       static func unlock(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.unlock, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "settings", bundle: ..., traitCollection: ...)`
       static func settings(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.settings.settings, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       /// This `R.image.settings.gesture` struct is generated, and contains static references to 4 images.
       struct gesture {
         /// Image `Left`.
@@ -226,33 +381,41 @@ struct R: Rswift.Validatable {
         static let tap = Rswift.ImageResource(bundle: R.hostingBundle, name: "Settings/Gesture/Tap")
         /// Image `Volume`.
         static let volume = Rswift.ImageResource(bundle: R.hostingBundle, name: "Settings/Gesture/Volume")
-        
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Left", bundle: ..., traitCollection: ...)`
         static func left(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.settings.gesture.left, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Right", bundle: ..., traitCollection: ...)`
         static func right(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.settings.gesture.right, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Tap", bundle: ..., traitCollection: ...)`
         static func tap(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.settings.gesture.tap, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Volume", bundle: ..., traitCollection: ...)`
         static func volume(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.settings.gesture.volume, compatibleWith: traitCollection)
         }
-        
+        #endif
+
         fileprivate init() {}
       }
-      
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.sort` struct is generated, and contains static references to 15 images.
     struct sort {
       /// Image `Album Artist`.
@@ -285,85 +448,115 @@ struct R: Rswift.Validatable {
       static let year = Rswift.ImageResource(bundle: R.hostingBundle, name: "Sort/Year")
       /// Image `default`.
       static let `default` = Rswift.ImageResource(bundle: R.hostingBundle, name: "Sort/default")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Album Artist", bundle: ..., traitCollection: ...)`
       static func albumArtist(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.albumArtist, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Album Title", bundle: ..., traitCollection: ...)`
       static func albumTitle(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.albumTitle, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Artist", bundle: ..., traitCollection: ...)`
       static func artist(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.artist, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Ascending", bundle: ..., traitCollection: ...)`
       static func ascending(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.ascending, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Composer", bundle: ..., traitCollection: ...)`
       static func composer(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.composer, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Date Added", bundle: ..., traitCollection: ...)`
       static func dateAdded(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.dateAdded, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Descending", bundle: ..., traitCollection: ...)`
       static func descending(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.descending, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Genre", bundle: ..., traitCollection: ...)`
       static func genre(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.genre, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Last Played Date", bundle: ..., traitCollection: ...)`
       static func lastPlayedDate(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.lastPlayedDate, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Play Count", bundle: ..., traitCollection: ...)`
       static func playCount(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.playCount, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Playback Duration", bundle: ..., traitCollection: ...)`
       static func playbackDuration(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.playbackDuration, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Rating", bundle: ..., traitCollection: ...)`
       static func rating(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.rating, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Title", bundle: ..., traitCollection: ...)`
       static func title(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.title, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Year", bundle: ..., traitCollection: ...)`
       static func year(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.year, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "default", bundle: ..., traitCollection: ...)`
       static func `default`(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.sort.`default`, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.statusAlert` struct is generated, and contains static references to 4 images.
     struct statusAlert {
       /// Image `check`.
@@ -374,50 +567,62 @@ struct R: Rswift.Validatable {
       static let skipToNextItem = Rswift.ImageResource(bundle: R.hostingBundle, name: "StatusAlert/skipToNextItem")
       /// Image `skipToPreviousItem`.
       static let skipToPreviousItem = Rswift.ImageResource(bundle: R.hostingBundle, name: "StatusAlert/skipToPreviousItem")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "check", bundle: ..., traitCollection: ...)`
       static func check(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.statusAlert.check, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "remove", bundle: ..., traitCollection: ...)`
       static func remove(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.statusAlert.remove, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "skipToNextItem", bundle: ..., traitCollection: ...)`
       static func skipToNextItem(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.statusAlert.skipToNextItem, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "skipToPreviousItem", bundle: ..., traitCollection: ...)`
       static func skipToPreviousItem(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.statusAlert.skipToPreviousItem, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.tabGlypics` struct is generated, and contains static references to 2 images.
     struct tabGlypics {
       /// Image `albums`.
       static let albums = Rswift.ImageResource(bundle: R.hostingBundle, name: "TabGlypics/albums")
       /// Image `artists`.
       static let artists = Rswift.ImageResource(bundle: R.hostingBundle, name: "TabGlypics/artists")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "albums", bundle: ..., traitCollection: ...)`
       static func albums(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tabGlypics.albums, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "artists", bundle: ..., traitCollection: ...)`
       static func artists(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tabGlypics.artists, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       fileprivate init() {}
     }
-    
+
     /// This `R.image.tab` struct is generated, and contains static references to 12 images.
     struct tab {
       /// Image `Albums`.
@@ -444,87 +649,115 @@ struct R: Rswift.Validatable {
       static let songs = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Songs")
       /// Image `soundcloud`.
       static let soundcloud = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/soundcloud")
-      
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Albums", bundle: ..., traitCollection: ...)`
       static func albums(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.albums, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Artists", bundle: ..., traitCollection: ...)`
       static func artists(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.artists, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Composers", bundle: ..., traitCollection: ...)`
       static func composers(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.composers, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Favorites", bundle: ..., traitCollection: ...)`
       static func favorites(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.favorites, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Files", bundle: ..., traitCollection: ...)`
       static func files(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.files, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Genres", bundle: ..., traitCollection: ...)`
       static func genres(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.genres, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "More", bundle: ..., traitCollection: ...)`
       static func more(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.more, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Playlists", bundle: ..., traitCollection: ...)`
       static func playlists(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.playlists, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Podcasts", bundle: ..., traitCollection: ...)`
       static func podcasts(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.podcasts, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Search", bundle: ..., traitCollection: ...)`
       static func search(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.search, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "Songs", bundle: ..., traitCollection: ...)`
       static func songs(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.songs, compatibleWith: traitCollection)
       }
-      
+      #endif
+
+      #if os(iOS) || os(tvOS)
       /// `UIImage(named: "soundcloud", bundle: ..., traitCollection: ...)`
       static func soundcloud(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
         return UIKit.UIImage(resource: R.image.tab.soundcloud, compatibleWith: traitCollection)
       }
-      
+      #endif
+
       /// This `R.image.tab.artist` struct is generated, and contains static references to 2 images.
       struct artist {
         /// Image `People Filled`.
         static let peopleFilled = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Artist/People Filled")
         /// Image `People`.
         static let people = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Artist/People")
-        
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "People Filled", bundle: ..., traitCollection: ...)`
         static func peopleFilled(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.artist.peopleFilled, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "People", bundle: ..., traitCollection: ...)`
         static func people(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.artist.people, compatibleWith: traitCollection)
         }
-        
+        #endif
+
         fileprivate init() {}
       }
-      
+
       /// This `R.image.tab.genre` struct is generated, and contains static references to 27 images.
       struct genre {
         /// Image `Alternative`.
@@ -581,145 +814,199 @@ struct R: Rswift.Validatable {
         static let vocal = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Genre/Vocal")
         /// Image `World`.
         static let world = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Genre/World")
-        
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Alternative", bundle: ..., traitCollection: ...)`
         static func alternative(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.alternative, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Blues", bundle: ..., traitCollection: ...)`
         static func blues(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.blues, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Children’s Music", bundle: ..., traitCollection: ...)`
         static func childrenSMusic(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.childrenSMusic, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Christian & Gospel", bundle: ..., traitCollection: ...)`
         static func christianGospel(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.christianGospel, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Classical", bundle: ..., traitCollection: ...)`
         static func classical(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.classical, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Comedy", bundle: ..., traitCollection: ...)`
         static func comedy(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.comedy, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Country", bundle: ..., traitCollection: ...)`
         static func country(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.country, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Dance", bundle: ..., traitCollection: ...)`
         static func dance(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.dance, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Easy Listening", bundle: ..., traitCollection: ...)`
         static func easyListening(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.easyListening, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Electronic", bundle: ..., traitCollection: ...)`
         static func electronic(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.electronic, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Electronica", bundle: ..., traitCollection: ...)`
         static func electronica(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.electronica, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Hip-Hop-Rap", bundle: ..., traitCollection: ...)`
         static func hipHopRap(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.hipHopRap, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Holiday", bundle: ..., traitCollection: ...)`
         static func holiday(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.holiday, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "J-Pop", bundle: ..., traitCollection: ...)`
         static func jPop(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.jPop, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Jazz", bundle: ..., traitCollection: ...)`
         static func jazz(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.jazz, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "K-Pop", bundle: ..., traitCollection: ...)`
         static func kPop(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.kPop, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Latino", bundle: ..., traitCollection: ...)`
         static func latino(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.latino, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "New Age", bundle: ..., traitCollection: ...)`
         static func newAge(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.newAge, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Opera", bundle: ..., traitCollection: ...)`
         static func opera(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.opera, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Pop", bundle: ..., traitCollection: ...)`
         static func pop(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.pop, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "R&B Soul", bundle: ..., traitCollection: ...)`
         static func rbSoul(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.rbSoul, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Reggae", bundle: ..., traitCollection: ...)`
         static func reggae(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.reggae, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Rock", bundle: ..., traitCollection: ...)`
         static func rock(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.rock, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Singer-Songwriter", bundle: ..., traitCollection: ...)`
         static func singerSongwriter(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.singerSongwriter, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Soundtrack", bundle: ..., traitCollection: ...)`
         static func soundtrack(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.soundtrack, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Vocal", bundle: ..., traitCollection: ...)`
         static func vocal(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.vocal, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "World", bundle: ..., traitCollection: ...)`
         static func world(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.genre.world, compatibleWith: traitCollection)
         }
-        
+        #endif
+
         fileprivate init() {}
       }
-      
+
       /// This `R.image.tab.playlist` struct is generated, and contains static references to 6 images.
       struct playlist {
         /// Image `Add`.
@@ -734,76 +1021,92 @@ struct R: Rswift.Validatable {
         static let shuffle = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Playlist/Shuffle")
         /// Image `SmartPlaylists`.
         static let smartPlaylists = Rswift.ImageResource(bundle: R.hostingBundle, name: "Tab/Playlist/SmartPlaylists")
-        
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Add", bundle: ..., traitCollection: ...)`
         static func add(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.add, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Genius", bundle: ..., traitCollection: ...)`
         static func genius(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.genius, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "MusicFolder", bundle: ..., traitCollection: ...)`
         static func musicFolder(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.musicFolder, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Play", bundle: ..., traitCollection: ...)`
         static func play(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.play, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "Shuffle", bundle: ..., traitCollection: ...)`
         static func shuffle(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.shuffle, compatibleWith: traitCollection)
         }
-        
+        #endif
+
+        #if os(iOS) || os(tvOS)
         /// `UIImage(named: "SmartPlaylists", bundle: ..., traitCollection: ...)`
         static func smartPlaylists(compatibleWith traitCollection: UIKit.UITraitCollection? = nil) -> UIKit.UIImage? {
           return UIKit.UIImage(resource: R.image.tab.playlist.smartPlaylists, compatibleWith: traitCollection)
         }
-        
+        #endif
+
         fileprivate init() {}
       }
-      
+
       fileprivate init() {}
     }
-    
+
     fileprivate init() {}
   }
-  
+
   /// This `R.nib` struct is generated, and contains static references to 2 nibs.
   struct nib {
     /// Nib `AlbumSongCell`.
     static let albumSongCell = _R.nib._AlbumSongCell()
     /// Nib `TableViewButtonsView`.
     static let tableViewButtonsView = _R.nib._TableViewButtonsView()
-    
+
+    #if os(iOS) || os(tvOS)
     /// `UINib(name: "AlbumSongCell", in: bundle)`
     @available(*, deprecated, message: "Use UINib(resource: R.nib.albumSongCell) instead")
     static func albumSongCell(_: Void = ()) -> UIKit.UINib {
       return UIKit.UINib(resource: R.nib.albumSongCell)
     }
-    
+    #endif
+
+    #if os(iOS) || os(tvOS)
     /// `UINib(name: "TableViewButtonsView", in: bundle)`
     @available(*, deprecated, message: "Use UINib(resource: R.nib.tableViewButtonsView) instead")
     static func tableViewButtonsView(_: Void = ()) -> UIKit.UINib {
       return UIKit.UINib(resource: R.nib.tableViewButtonsView)
     }
-    
+    #endif
+
     static func albumSongCell(owner ownerOrNil: AnyObject?, options optionsOrNil: [UINib.OptionsKey : Any]? = nil) -> AlbumSongCell? {
       return R.nib.albumSongCell.instantiate(withOwner: ownerOrNil, options: optionsOrNil)[0] as? AlbumSongCell
     }
-    
+
     static func tableViewButtonsView(owner ownerOrNil: AnyObject?, options optionsOrNil: [UINib.OptionsKey : Any]? = nil) -> UIKit.UIView? {
       return R.nib.tableViewButtonsView.instantiate(withOwner: ownerOrNil, options: optionsOrNil)[0] as? UIKit.UIView
     }
-    
+
     fileprivate init() {}
   }
-  
+
   /// This `R.reuseIdentifier` struct is generated, and contains static references to 5 reuse identifiers.
   struct reuseIdentifier {
     /// Reuse identifier `AlbumSongCell`.
@@ -816,1573 +1119,914 @@ struct R: Rswift.Validatable {
     static let songCell: Rswift.ReuseIdentifier<UIKit.UITableViewCell> = Rswift.ReuseIdentifier(identifier: "SongCell")
     /// Reuse identifier `TextViewCell`.
     static let textViewCell: Rswift.ReuseIdentifier<UIKit.UITableViewCell> = Rswift.ReuseIdentifier(identifier: "TextViewCell")
-    
+
     fileprivate init() {}
   }
-  
-  /// This `R.storyboard` struct is generated, and contains static references to 3 storyboards.
-  struct storyboard {
-    /// Storyboard `LaunchScreen`.
-    static let launchScreen = _R.storyboard.launchScreen()
-    /// Storyboard `Main`.
-    static let main = _R.storyboard.main()
-    /// Storyboard `SongInfo`.
-    static let songInfo = _R.storyboard.songInfo()
-    
-    /// `UIStoryboard(name: "LaunchScreen", bundle: ...)`
-    static func launchScreen(_: Void = ()) -> UIKit.UIStoryboard {
-      return UIKit.UIStoryboard(resource: R.storyboard.launchScreen)
-    }
-    
-    /// `UIStoryboard(name: "Main", bundle: ...)`
-    static func main(_: Void = ()) -> UIKit.UIStoryboard {
-      return UIKit.UIStoryboard(resource: R.storyboard.main)
-    }
-    
-    /// `UIStoryboard(name: "SongInfo", bundle: ...)`
-    static func songInfo(_: Void = ()) -> UIKit.UIStoryboard {
-      return UIKit.UIStoryboard(resource: R.storyboard.songInfo)
-    }
-    
-    fileprivate init() {}
-  }
-  
+
   /// This `R.string` struct is generated, and contains static references to 1 localization tables.
   struct string {
-    /// This `R.string.localizable` struct is generated, and contains static references to 127 localization keys.
+    /// This `R.string.localizable` struct is generated, and contains static references to 39 localization keys.
     struct localizable {
       /// en translation: %#@value@
-      /// 
+      ///
       /// Locales: en, ko
       static let numberOfSongs = Rswift.StringResource(key: "numberOfSongs", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: Added to favorites
-      /// 
+      ///
       /// Locales: en, ko
       static let favoriteAddedToFavorites = Rswift.StringResource(key: "favorite.addedToFavorites", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: Unknown %@
-      /// 
+      ///
       /// Locales: en, ko
       static let unknownWith = Rswift.StringResource(key: "unknown.with", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 검색
-      /// 
+      ///
       /// Locales: en
       static let search = Rswift.StringResource(key: "search", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 그룹짓기
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoGrouping = Rswift.StringResource(key: "songInfo.grouping", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 기본
-      /// 
+      ///
       /// Locales: en, ko
       static let sortingDefault = Rswift.StringResource(key: "sorting.default", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 길이
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoPlaybackDuration = Rswift.StringResource(key: "songInfo.playbackDuration", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 년도
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoYear = Rswift.StringResource(key: "songInfo.year", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 노래
-      /// 
+      ///
       /// Locales: en
       static let song = Rswift.StringResource(key: "song", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 노래
-      /// 
+      ///
       /// Locales: en
       static let songs = Rswift.StringResource(key: "songs", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 노래 정보
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfo = Rswift.StringResource(key: "songInfo", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 더 보기
-      /// 
+      ///
       /// Locales: en
       static let more = Rswift.StringResource(key: "more", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 디스크 번호
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoDiscNumber = Rswift.StringResource(key: "songInfo.discNumber", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 선호도
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoRating = Rswift.StringResource(key: "songInfo.rating", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en
       static let artist = Rswift.StringResource(key: "artist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en
       static let artists = Rswift.StringResource(key: "artists", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoArtist = Rswift.StringResource(key: "songInfo.artist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en
       static let album = Rswift.StringResource(key: "album", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en
       static let albums = Rswift.StringResource(key: "albums", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoAlbumTitle = Rswift.StringResource(key: "songInfo.albumTitle", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 앨범 아티스트
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoAlbumArtist = Rswift.StringResource(key: "songInfo.albumArtist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en
       static let composer = Rswift.StringResource(key: "composer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en
       static let composers = Rswift.StringResource(key: "composers", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoComposer = Rswift.StringResource(key: "songInfo.composer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en
       static let genre = Rswift.StringResource(key: "genre", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en
       static let genres = Rswift.StringResource(key: "genres", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoGenre = Rswift.StringResource(key: "songInfo.genre", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 재생 횟수
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoPlayCount = Rswift.StringResource(key: "songInfo.playCount", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 재생목록
-      /// 
+      ///
       /// Locales: en
       static let playlist = Rswift.StringResource(key: "playlist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 재생목록
-      /// 
+      ///
       /// Locales: en
       static let playlists = Rswift.StringResource(key: "playlists", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 제목
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoTitle = Rswift.StringResource(key: "songInfo.title", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 주석
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoComment = Rswift.StringResource(key: "songInfo.comment", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 즐겨찾기
-      /// 
+      ///
       /// Locales: en
       static let favorite = Rswift.StringResource(key: "favorite", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 즐겨찾기
-      /// 
+      ///
       /// Locales: en
       static let favorites = Rswift.StringResource(key: "favorites", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 최근 추가된 날짜
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoDateAdded = Rswift.StringResource(key: "songInfo.dateAdded", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 최종 재생
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoLastPlayedDate = Rswift.StringResource(key: "songInfo.lastPlayedDate", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 트랙
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoTrack = Rswift.StringResource(key: "songInfo.track", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
       /// en translation: 파일
-      /// 
+      ///
       /// Locales: en
       static let files = Rswift.StringResource(key: "files", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en"], comment: nil)
       /// en translation: 편집 앨범
-      /// 
+      ///
       /// Locales: en, ko
       static let songInfoCompilation = Rswift.StringResource(key: "songInfo.compilation", tableName: "Localizable", bundle: R.hostingBundle, locales: ["en", "ko"], comment: nil)
-      /// ko translation: %@(이)가 존재하지 않습니다.
-      /// 
-      /// Locales: ko
-      static let doNotExist = Rswift.StringResource(key: "%@ do not exist.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: %@(이)가 존재하지 않습니다.
-      /// 
-      /// Locales: ko
-      static let doesNotExist = Rswift.StringResource(key: "%@ does not exist.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: %lu개의 앨범
-      /// 
-      /// Locales: ko
-      static let luAlbums = Rswift.StringResource(key: "%lu albums", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: EQ
-      /// 
-      /// Locales: ko
-      static let equalizer = Rswift.StringResource(key: "Equalizer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: Flow Player
-      /// 
-      /// Locales: ko
-      static let flowPlayer = Rswift.StringResource(key: "Flow Player", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: Flow Player은 기기 내의 음악을 보여주는 앱이며, 자체적으로 음악을 다운로드할 수 없습니다. 직접 iTunes에서 음악을 동기화하거나 음악 파일을 직접 넣어주세요.
-      /// 
-      /// Locales: ko
-      static let tutorial_DESC1 = Rswift.StringResource(key: "TUTORIAL_DESC1", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: Send Anywhere에서 받은 키를 입력해주세요.
-      /// 
-      /// Locales: ko
-      static let pleaseEnterTheKeyYouReceivedFromSendAnywhere = Rswift.StringResource(key: "Please enter the key you received from Send Anywhere.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: iOS %@ 버전 이상에서 지원합니다.
-      /// 
-      /// Locales: ko
-      static let supportedInIOSAndLater = Rswift.StringResource(key: "Supported in iOS %@ and later.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: iTunes 동기화를 사용하지 않고 Flow Player 앱에 음악을 직접 저장하여 재생할 수 있습니다. 현재 버전에서는 제어 센터에서만 음악을 컨트롤할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static let youCanDownloadAndPlaySongsFromSafariToDownloadTheSongsYouDownloadedFromThisAppInTheCurrentVersionYouCanControlMusicOnlyFromTheControlCenter = Rswift.StringResource(key: "You can download and play songs from Safari to download the songs you downloaded from this app.\nIn the current version, you can control music only from the Control Center.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 검색 결과가 없습니다.
-      /// 
-      /// Locales: ko
-      static let noSearchResultsFound = Rswift.StringResource(key: "No search results found.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 구매 목록은 따로 기기에 저장되지 않아, 기기의 용량과는 무관합니다. 또한, 개발자는 각 사용자의 구매 목록에서 앱을 삭제할 수 없습니다.  3초 후에 아래 버튼이 활성화됩니다.
-      /// 
-      /// Locales: ko
-      static let tutorial_DESC3 = Rswift.StringResource(key: "TUTORIAL_DESC3", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 그래도 재생하시겠습니까?
-      /// 
-      /// Locales: ko
-      static let wouldYouLikeToPlayItAnyway = Rswift.StringResource(key: "Would you like to play it anyway?", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 그룹짓기
-      /// 
-      /// Locales: ko
-      static let grouping = Rswift.StringResource(key: "Grouping", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 기기 내의 음악을 가져오기 위해 미디어 보관함의 권한이 필요합니다. 허용하지 않을 경우 음악이 표시되지 않습니다.
-      /// 
-      /// Locales: ko
-      static let tutorial_DESC2 = Rswift.StringResource(key: "TUTORIAL_DESC2", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 기본
-      /// 
-      /// Locales: ko
-      static let `default` = Rswift.StringResource(key: "Default", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 내보내기
-      /// 
-      /// Locales: ko
-      static let export = Rswift.StringResource(key: "Export", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 네
-      /// 
-      /// Locales: ko
-      static let yes = Rswift.StringResource(key: "Yes", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 년도
-      /// 
-      /// Locales: ko
-      static let year = Rswift.StringResource(key: "Year", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 다양한 아티스트
-      /// 
-      /// Locales: ko
-      static let variousArtists = Rswift.StringResource(key: "Various artists", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 다음으로
-      /// 
-      /// Locales: ko
-      static let next = Rswift.StringResource(key: "Next", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 도움말
-      /// 
-      /// Locales: ko
-      static let help = Rswift.StringResource(key: "Help", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 디스크 번호
-      /// 
-      /// Locales: ko
-      static let discNumber = Rswift.StringResource(key: "Disc number", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 미디어 보관함 접근 불가
-      /// 
-      /// Locales: ko
-      static let accessDeniedToMediaLibrary = Rswift.StringResource(key: "Access denied to media library", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 미디어 보관함 접근이 거부되었습니다.
-      /// 
-      /// Locales: ko
-      static let mediaLibraryAccessRestrictedByCorporateOrParentalSettings = Rswift.StringResource(key: "Media library access restricted by corporate or parental settings", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 미디어 보관함의 권한이 필요합니다.
-      /// 
-      /// Locales: ko
-      static let tutorial_TITLE2 = Rswift.StringResource(key: "TUTORIAL_TITLE2", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 반갑습니다!
-      /// 
-      /// Locales: ko
-      static let tutorial_TITLE1 = Rswift.StringResource(key: "TUTORIAL_TITLE1", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 베타 버전이므로 여러 버그가 발생할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static let currentlyInBeta = Rswift.StringResource(key: "Currently in beta.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 변경할 이름을 입력해주세요.
-      /// 
-      /// Locales: ko
-      static let pleaseEnterNewName = Rswift.StringResource(key: "Please enter new name.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 보기 옵션
-      /// 
-      /// Locales: ko
-      static let displayOptions = Rswift.StringResource(key: "Display options", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 상단의 4개 항목이 탭 메뉴로 지정됩니다.
-      /// 
-      /// Locales: ko
-      static let theTopFourItemsWillBeAssignedToTheTabMenu = Rswift.StringResource(key: "The top four items will be assigned to the tab menu.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 새로운 재생목록
-      /// 
-      /// Locales: ko
-      static let newPlaylist = Rswift.StringResource(key: "New playlist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 새로운 폴더
-      /// 
-      /// Locales: ko
-      static let createFolder = Rswift.StringResource(key: "Create folder", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 생성할 폴더 이름을 입력하세요.
-      /// 
-      /// Locales: ko
-      static let pleaseEnterANewFolderName = Rswift.StringResource(key: "Please enter a new folder name.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 선호도
-      /// 
-      /// Locales: ko
-      static let rating = Rswift.StringResource(key: "Rating", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 설정
-      /// 
-      /// Locales: ko
-      static let settings = Rswift.StringResource(key: "Settings", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 설정 앱으로 이동...
-      /// 
-      /// Locales: ko
-      static let goToSettingsApp = Rswift.StringResource(key: "Go to settings app...", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 아이템 삭제
-      /// 
-      /// Locales: ko
-      static let deleteItemS = Rswift.StringResource(key: "Delete item(s)", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 알 수 없는 아티스트
-      /// 
-      /// Locales: ko
-      static let unknownArtist = Rswift.StringResource(key: "Unknown artist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 알 수 없는 앨범
-      /// 
-      /// Locales: ko
-      static let unknownAlbum = Rswift.StringResource(key: "Unknown album", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 알 수 없는 제목
-      /// 
-      /// Locales: ko
-      static let unknownTitle = Rswift.StringResource(key: "Unknown title", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 앨범 아티스트
-      /// 
-      /// Locales: ko
-      static let albumArtist = Rswift.StringResource(key: "Album Artist", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 앱 개발자
-      /// 
-      /// Locales: ko
-      static let developer = Rswift.StringResource(key: "Developer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 앱 리뷰하기
-      /// 
-      /// Locales: ko
-      static let rateThisApp = Rswift.StringResource(key: "Rate this app", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 앱 아이콘 디자이너
-      /// 
-      /// Locales: ko
-      static let appIconDesigner = Rswift.StringResource(key: "App icon designer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 에러가 발생했습니다.
-      /// 
-      /// Locales: ko
-      static let anErrorHasOccurred = Rswift.StringResource(key: "An error has occurred.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 여기에 파일을 옮기기 위해 위의 '이동' 버튼을 터치해주세요.
-      /// 
-      /// Locales: ko
-      static let touchTheMoveButtonAboveToMoveFilesHere = Rswift.StringResource(key: "Touch the 'Move' button above to move files here.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 윈컴이 (Wincomi)
-      /// 
-      /// Locales: ko
-      static let wincomi_NICKNAME = Rswift.StringResource(key: "WINCOMI_NICKNAME", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 음악 앱으로 이동...
-      /// 
-      /// Locales: ko
-      static let goToMusicApp = Rswift.StringResource(key: "Go to music app...", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 음악 추가
-      /// 
-      /// Locales: ko
-      static let addSongs = Rswift.StringResource(key: "Add songs", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 음악, 앨범, 아티스트를 검색합니다.
-      /// 
-      /// Locales: ko
-      static let searchSongsAlbumsAndArtists = Rswift.StringResource(key: "Search songs, albums, and artists.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 음악을 불러오기 위해 설정 앱에서 미디어 보관함 접근을 허용해주세요.
-      /// 
-      /// Locales: ko
-      static let mediaLibraryAccessDeniedByUser = Rswift.StringResource(key: "Media library access denied by user", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이 음악의 아티스트 보기
-      /// 
-      /// Locales: ko
-      static let showArtistOfThisSong = Rswift.StringResource(key: "Show artist of this song", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이 음악의 앨범 보기
-      /// 
-      /// Locales: ko
-      static let showAlbumOfThisSong = Rswift.StringResource(key: "Show album of this song", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이 음악의 정보 보기
-      /// 
-      /// Locales: ko
-      static let showSongInfo = Rswift.StringResource(key: "Show song info", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이 파일은 더 이상 즐겨찾기에 존재하지 않습니다,
-      /// 
-      /// Locales: ko
-      static let thisFileNoLongerExistsInFavorites = Rswift.StringResource(key: "This file no longer exists in favorites.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이 파일은 음악이 아닌 것 같습니다.
-      /// 
-      /// Locales: ko
-      static let thisFileDoesNotSeemToBeMusic = Rswift.StringResource(key: "This file does not seem to be music.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이동
-      /// 
-      /// Locales: ko
-      static let move = Rswift.StringResource(key: "Move", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 이름 변경
-      /// 
-      /// Locales: ko
-      static let rename = Rswift.StringResource(key: "Rename", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 임의 재생
-      /// 
-      /// Locales: ko
-      static let shuffle = Rswift.StringResource(key: "Shuffle", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 자주 묻는 질문과 팁
-      /// 
-      /// Locales: ko
-      static let tipsQnA = Rswift.StringResource(key: "Tips & QnA", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 재생
-      /// 
-      /// Locales: ko
-      static let play = Rswift.StringResource(key: "Play", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 재생목록 추가/제거는 애플 정책상 기본 음악 앱에서만 할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static let youCanOnlyAddAndDeleteAPlaylistInDefaultMusicAppOnApplePolicy = Rswift.StringResource(key: "You can only add and delete a playlist in default music app on Apple policy.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 정렬 방식
-      /// 
-      /// Locales: ko
-      static let sortBy = Rswift.StringResource(key: "Sort by...", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 정말로 이 아이템을 삭제하시겠습니까?
-      /// 
-      /// Locales: ko
-      static let doYouReallyWantToDeleteThisItemS = Rswift.StringResource(key: "Do you really want to delete this item(s)?", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 정보
-      /// 
-      /// Locales: ko
-      static let about = Rswift.StringResource(key: "About", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 정보
-      /// 
-      /// Locales: ko
-      static let info = Rswift.StringResource(key: "Info", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 제목
-      /// 
-      /// Locales: ko
-      static let title = Rswift.StringResource(key: "Title", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 제발 구매 목록 삭제를 요청하지 마세요!
-      /// 
-      /// Locales: ko
-      static let tutorial_TITLE3 = Rswift.StringResource(key: "TUTORIAL_TITLE3", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 주석
-      /// 
-      /// Locales: ko
-      static let comments = Rswift.StringResource(key: "Comments", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 즐겨찾기에 추가
-      /// 
-      /// Locales: ko
-      static let addToFavorites = Rswift.StringResource(key: "Add to favorites", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 즐겨찾기에 추가되었습니다.
-      /// 
-      /// Locales: ko
-      static let savedToFavorites = Rswift.StringResource(key: "Saved to favorites.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 즐겨찾기에 추가하고 싶은 항목을 왼쪽으로 스와이프하여 즐겨찾기에 추가하세요. 앨범을 추가할 경우 앨범을 길게 누르세요.
-      /// 
-      /// Locales: ko
-      static let addYourFavoritesSongs = Rswift.StringResource(key: "Add your favorites songs.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 즐겨찾기에서 제거
-      /// 
-      /// Locales: ko
-      static let removeFromFavorites = Rswift.StringResource(key: "Remove from favorites", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 지금 재생 중인 음악이 없습니다.
-      /// 
-      /// Locales: ko
-      static let thereIsNoMusicCurrentlyPlaying = Rswift.StringResource(key: "There is no music currently playing.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 최근 추가된 날짜
-      /// 
-      /// Locales: ko
-      static let persistentID = Rswift.StringResource(key: "PersistentID", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 최종 재생
-      /// 
-      /// Locales: ko
-      static let lastPlayed = Rswift.StringResource(key: "Last played", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 최종 재생
-      /// 
-      /// Locales: ko
-      static let lastPlayedDate = Rswift.StringResource(key: "LastPlayedDate", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 취소
-      /// 
-      /// Locales: ko
-      static let cancel = Rswift.StringResource(key: "Cancel", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 취침 예약
-      /// 
-      /// Locales: ko
-      static let sleepTimer = Rswift.StringResource(key: "Sleep timer", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 클립보드에 복사되었습니다.
-      /// 
-      /// Locales: ko
-      static let copiedToPasteboard = Rswift.StringResource(key: "Copied to pasteboard", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 탭 순서를 변경하기 위해 상단의 편집 버튼을 터치해주세요.
-      /// 
-      /// Locales: ko
-      static let touchTheEditButtonAtTheTopToChangeTheTabOrder = Rswift.StringResource(key: "Touch the Edit button at the top to change the tab order.", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 트랙
-      /// 
-      /// Locales: ko
-      static let track = Rswift.StringResource(key: "Track", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 파일 받기
-      /// 
-      /// Locales: ko
-      static let receiveFiles = Rswift.StringResource(key: "Receive files", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 파일 브라우저
-      /// 
-      /// Locales: ko
-      static let fileBrowser = Rswift.StringResource(key: "File browser", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 편집 앨범
-      /// 
-      /// Locales: ko
-      static let compilation = Rswift.StringResource(key: "Compilation", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 편집 앨범 모으기
-      /// 
-      /// Locales: ko
-      static let mergeCompilations = Rswift.StringResource(key: "Merge compilations", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 피드백 보내기
-      /// 
-      /// Locales: ko
-      static let sendFeedback = Rswift.StringResource(key: "Send feedback", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      /// ko translation: 확인
-      /// 
-      /// Locales: ko
-      static let oK = Rswift.StringResource(key: "OK", tableName: "Localizable", bundle: R.hostingBundle, locales: ["ko"], comment: nil)
-      
+
       /// en translation: %#@value@
-      /// 
+      ///
       /// Locales: en, ko
-      static func numberOfSongs(value value1: Int) -> String {
-        return String(format: NSLocalizedString("numberOfSongs", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
+      static func numberOfSongs(value value1: Int, preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          let format = NSLocalizedString("numberOfSongs", bundle: hostingBundle, comment: "")
+          return String(format: format, locale: applicationLocale, value1)
+        }
+
+        guard let (locale, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "numberOfSongs"
+        }
+
+        let format = NSLocalizedString("numberOfSongs", bundle: bundle, comment: "")
+        return String(format: format, locale: locale, value1)
       }
-      
+
       /// en translation: Added to favorites
-      /// 
+      ///
       /// Locales: en, ko
-      static func favoriteAddedToFavorites(_: Void = ()) -> String {
-        return NSLocalizedString("favorite.addedToFavorites", bundle: R.hostingBundle, comment: "")
+      static func favoriteAddedToFavorites(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("favorite.addedToFavorites", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "favorite.addedToFavorites"
+        }
+
+        return NSLocalizedString("favorite.addedToFavorites", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: Unknown %@
-      /// 
+      ///
       /// Locales: en, ko
-      static func unknownWith(_ value1: String) -> String {
-        return String(format: NSLocalizedString("unknown.with", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
+      static func unknownWith(_ value1: String, preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          let format = NSLocalizedString("unknown.with", bundle: hostingBundle, comment: "")
+          return String(format: format, locale: applicationLocale, value1)
+        }
+
+        guard let (locale, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "unknown.with"
+        }
+
+        let format = NSLocalizedString("unknown.with", bundle: bundle, comment: "")
+        return String(format: format, locale: locale, value1)
       }
-      
+
       /// en translation: 검색
-      /// 
+      ///
       /// Locales: en
-      static func search(_: Void = ()) -> String {
-        return NSLocalizedString("search", bundle: R.hostingBundle, comment: "")
+      static func search(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("search", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "search"
+        }
+
+        return NSLocalizedString("search", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 그룹짓기
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoGrouping(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.grouping", bundle: R.hostingBundle, comment: "")
+      static func songInfoGrouping(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.grouping", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.grouping"
+        }
+
+        return NSLocalizedString("songInfo.grouping", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 기본
-      /// 
+      ///
       /// Locales: en, ko
-      static func sortingDefault(_: Void = ()) -> String {
-        return NSLocalizedString("sorting.default", bundle: R.hostingBundle, comment: "")
+      static func sortingDefault(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("sorting.default", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "sorting.default"
+        }
+
+        return NSLocalizedString("sorting.default", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 길이
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoPlaybackDuration(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.playbackDuration", bundle: R.hostingBundle, comment: "")
+      static func songInfoPlaybackDuration(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.playbackDuration", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.playbackDuration"
+        }
+
+        return NSLocalizedString("songInfo.playbackDuration", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 년도
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoYear(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.year", bundle: R.hostingBundle, comment: "")
+      static func songInfoYear(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.year", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.year"
+        }
+
+        return NSLocalizedString("songInfo.year", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 노래
-      /// 
+      ///
       /// Locales: en
-      static func song(_: Void = ()) -> String {
-        return NSLocalizedString("song", bundle: R.hostingBundle, comment: "")
+      static func song(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("song", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "song"
+        }
+
+        return NSLocalizedString("song", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 노래
-      /// 
+      ///
       /// Locales: en
-      static func songs(_: Void = ()) -> String {
-        return NSLocalizedString("songs", bundle: R.hostingBundle, comment: "")
+      static func songs(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songs", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songs"
+        }
+
+        return NSLocalizedString("songs", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 노래 정보
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfo(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo", bundle: R.hostingBundle, comment: "")
+      static func songInfo(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo"
+        }
+
+        return NSLocalizedString("songInfo", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 더 보기
-      /// 
+      ///
       /// Locales: en
-      static func more(_: Void = ()) -> String {
-        return NSLocalizedString("more", bundle: R.hostingBundle, comment: "")
+      static func more(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("more", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "more"
+        }
+
+        return NSLocalizedString("more", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 디스크 번호
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoDiscNumber(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.discNumber", bundle: R.hostingBundle, comment: "")
+      static func songInfoDiscNumber(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.discNumber", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.discNumber"
+        }
+
+        return NSLocalizedString("songInfo.discNumber", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 선호도
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoRating(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.rating", bundle: R.hostingBundle, comment: "")
+      static func songInfoRating(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.rating", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.rating"
+        }
+
+        return NSLocalizedString("songInfo.rating", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en
-      static func artist(_: Void = ()) -> String {
-        return NSLocalizedString("artist", bundle: R.hostingBundle, comment: "")
+      static func artist(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("artist", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "artist"
+        }
+
+        return NSLocalizedString("artist", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en
-      static func artists(_: Void = ()) -> String {
-        return NSLocalizedString("artists", bundle: R.hostingBundle, comment: "")
+      static func artists(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("artists", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "artists"
+        }
+
+        return NSLocalizedString("artists", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 아티스트
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoArtist(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.artist", bundle: R.hostingBundle, comment: "")
+      static func songInfoArtist(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.artist", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.artist"
+        }
+
+        return NSLocalizedString("songInfo.artist", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en
-      static func album(_: Void = ()) -> String {
-        return NSLocalizedString("album", bundle: R.hostingBundle, comment: "")
+      static func album(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("album", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "album"
+        }
+
+        return NSLocalizedString("album", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en
-      static func albums(_: Void = ()) -> String {
-        return NSLocalizedString("albums", bundle: R.hostingBundle, comment: "")
+      static func albums(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("albums", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "albums"
+        }
+
+        return NSLocalizedString("albums", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 앨범
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoAlbumTitle(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.albumTitle", bundle: R.hostingBundle, comment: "")
+      static func songInfoAlbumTitle(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.albumTitle", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.albumTitle"
+        }
+
+        return NSLocalizedString("songInfo.albumTitle", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 앨범 아티스트
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoAlbumArtist(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.albumArtist", bundle: R.hostingBundle, comment: "")
+      static func songInfoAlbumArtist(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.albumArtist", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.albumArtist"
+        }
+
+        return NSLocalizedString("songInfo.albumArtist", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en
-      static func composer(_: Void = ()) -> String {
-        return NSLocalizedString("composer", bundle: R.hostingBundle, comment: "")
+      static func composer(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("composer", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "composer"
+        }
+
+        return NSLocalizedString("composer", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en
-      static func composers(_: Void = ()) -> String {
-        return NSLocalizedString("composers", bundle: R.hostingBundle, comment: "")
+      static func composers(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("composers", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "composers"
+        }
+
+        return NSLocalizedString("composers", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 작곡가
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoComposer(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.composer", bundle: R.hostingBundle, comment: "")
+      static func songInfoComposer(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.composer", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.composer"
+        }
+
+        return NSLocalizedString("songInfo.composer", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en
-      static func genre(_: Void = ()) -> String {
-        return NSLocalizedString("genre", bundle: R.hostingBundle, comment: "")
+      static func genre(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("genre", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "genre"
+        }
+
+        return NSLocalizedString("genre", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en
-      static func genres(_: Void = ()) -> String {
-        return NSLocalizedString("genres", bundle: R.hostingBundle, comment: "")
+      static func genres(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("genres", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "genres"
+        }
+
+        return NSLocalizedString("genres", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 장르
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoGenre(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.genre", bundle: R.hostingBundle, comment: "")
+      static func songInfoGenre(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.genre", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.genre"
+        }
+
+        return NSLocalizedString("songInfo.genre", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 재생 횟수
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoPlayCount(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.playCount", bundle: R.hostingBundle, comment: "")
+      static func songInfoPlayCount(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.playCount", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.playCount"
+        }
+
+        return NSLocalizedString("songInfo.playCount", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 재생목록
-      /// 
+      ///
       /// Locales: en
-      static func playlist(_: Void = ()) -> String {
-        return NSLocalizedString("playlist", bundle: R.hostingBundle, comment: "")
+      static func playlist(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("playlist", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "playlist"
+        }
+
+        return NSLocalizedString("playlist", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 재생목록
-      /// 
+      ///
       /// Locales: en
-      static func playlists(_: Void = ()) -> String {
-        return NSLocalizedString("playlists", bundle: R.hostingBundle, comment: "")
+      static func playlists(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("playlists", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "playlists"
+        }
+
+        return NSLocalizedString("playlists", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 제목
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoTitle(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.title", bundle: R.hostingBundle, comment: "")
+      static func songInfoTitle(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.title", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.title"
+        }
+
+        return NSLocalizedString("songInfo.title", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 주석
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoComment(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.comment", bundle: R.hostingBundle, comment: "")
+      static func songInfoComment(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.comment", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.comment"
+        }
+
+        return NSLocalizedString("songInfo.comment", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 즐겨찾기
-      /// 
+      ///
       /// Locales: en
-      static func favorite(_: Void = ()) -> String {
-        return NSLocalizedString("favorite", bundle: R.hostingBundle, comment: "")
+      static func favorite(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("favorite", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "favorite"
+        }
+
+        return NSLocalizedString("favorite", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 즐겨찾기
-      /// 
+      ///
       /// Locales: en
-      static func favorites(_: Void = ()) -> String {
-        return NSLocalizedString("favorites", bundle: R.hostingBundle, comment: "")
+      static func favorites(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("favorites", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "favorites"
+        }
+
+        return NSLocalizedString("favorites", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 최근 추가된 날짜
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoDateAdded(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.dateAdded", bundle: R.hostingBundle, comment: "")
+      static func songInfoDateAdded(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.dateAdded", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.dateAdded"
+        }
+
+        return NSLocalizedString("songInfo.dateAdded", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 최종 재생
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoLastPlayedDate(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.lastPlayedDate", bundle: R.hostingBundle, comment: "")
+      static func songInfoLastPlayedDate(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.lastPlayedDate", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.lastPlayedDate"
+        }
+
+        return NSLocalizedString("songInfo.lastPlayedDate", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 트랙
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoTrack(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.track", bundle: R.hostingBundle, comment: "")
+      static func songInfoTrack(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.track", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.track"
+        }
+
+        return NSLocalizedString("songInfo.track", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 파일
-      /// 
+      ///
       /// Locales: en
-      static func files(_: Void = ()) -> String {
-        return NSLocalizedString("files", bundle: R.hostingBundle, comment: "")
+      static func files(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("files", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "files"
+        }
+
+        return NSLocalizedString("files", bundle: bundle, comment: "")
       }
-      
+
       /// en translation: 편집 앨범
-      /// 
+      ///
       /// Locales: en, ko
-      static func songInfoCompilation(_: Void = ()) -> String {
-        return NSLocalizedString("songInfo.compilation", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: %@(이)가 존재하지 않습니다.
-      /// 
-      /// Locales: ko
-      static func doNotExist(_ value1: String) -> String {
-        return String(format: NSLocalizedString("%@ do not exist.", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
-      }
-      
-      /// ko translation: %@(이)가 존재하지 않습니다.
-      /// 
-      /// Locales: ko
-      static func doesNotExist(_ value1: String) -> String {
-        return String(format: NSLocalizedString("%@ does not exist.", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
-      }
-      
-      /// ko translation: %lu개의 앨범
-      /// 
-      /// Locales: ko
-      static func luAlbums(_ value1: UInt) -> String {
-        return String(format: NSLocalizedString("%lu albums", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
-      }
-      
-      /// ko translation: EQ
-      /// 
-      /// Locales: ko
-      static func equalizer(_: Void = ()) -> String {
-        return NSLocalizedString("Equalizer", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: Flow Player
-      /// 
-      /// Locales: ko
-      static func flowPlayer(_: Void = ()) -> String {
-        return NSLocalizedString("Flow Player", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: Flow Player은 기기 내의 음악을 보여주는 앱이며, 자체적으로 음악을 다운로드할 수 없습니다. 직접 iTunes에서 음악을 동기화하거나 음악 파일을 직접 넣어주세요.
-      /// 
-      /// Locales: ko
-      static func tutorial_DESC1(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_DESC1", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: Send Anywhere에서 받은 키를 입력해주세요.
-      /// 
-      /// Locales: ko
-      static func pleaseEnterTheKeyYouReceivedFromSendAnywhere(_: Void = ()) -> String {
-        return NSLocalizedString("Please enter the key you received from Send Anywhere.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: iOS %@ 버전 이상에서 지원합니다.
-      /// 
-      /// Locales: ko
-      static func supportedInIOSAndLater(_ value1: String) -> String {
-        return String(format: NSLocalizedString("Supported in iOS %@ and later.", bundle: R.hostingBundle, comment: ""), locale: R.applicationLocale, value1)
-      }
-      
-      /// ko translation: iTunes 동기화를 사용하지 않고 Flow Player 앱에 음악을 직접 저장하여 재생할 수 있습니다. 현재 버전에서는 제어 센터에서만 음악을 컨트롤할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static func youCanDownloadAndPlaySongsFromSafariToDownloadTheSongsYouDownloadedFromThisAppInTheCurrentVersionYouCanControlMusicOnlyFromTheControlCenter(_: Void = ()) -> String {
-        return NSLocalizedString("You can download and play songs from Safari to download the songs you downloaded from this app.\nIn the current version, you can control music only from the Control Center.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 검색 결과가 없습니다.
-      /// 
-      /// Locales: ko
-      static func noSearchResultsFound(_: Void = ()) -> String {
-        return NSLocalizedString("No search results found.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 구매 목록은 따로 기기에 저장되지 않아, 기기의 용량과는 무관합니다. 또한, 개발자는 각 사용자의 구매 목록에서 앱을 삭제할 수 없습니다.  3초 후에 아래 버튼이 활성화됩니다.
-      /// 
-      /// Locales: ko
-      static func tutorial_DESC3(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_DESC3", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 그래도 재생하시겠습니까?
-      /// 
-      /// Locales: ko
-      static func wouldYouLikeToPlayItAnyway(_: Void = ()) -> String {
-        return NSLocalizedString("Would you like to play it anyway?", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 그룹짓기
-      /// 
-      /// Locales: ko
-      static func grouping(_: Void = ()) -> String {
-        return NSLocalizedString("Grouping", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 기기 내의 음악을 가져오기 위해 미디어 보관함의 권한이 필요합니다. 허용하지 않을 경우 음악이 표시되지 않습니다.
-      /// 
-      /// Locales: ko
-      static func tutorial_DESC2(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_DESC2", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 기본
-      /// 
-      /// Locales: ko
-      static func `default`(_: Void = ()) -> String {
-        return NSLocalizedString("Default", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 내보내기
-      /// 
-      /// Locales: ko
-      static func export(_: Void = ()) -> String {
-        return NSLocalizedString("Export", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 네
-      /// 
-      /// Locales: ko
-      static func yes(_: Void = ()) -> String {
-        return NSLocalizedString("Yes", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 년도
-      /// 
-      /// Locales: ko
-      static func year(_: Void = ()) -> String {
-        return NSLocalizedString("Year", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 다양한 아티스트
-      /// 
-      /// Locales: ko
-      static func variousArtists(_: Void = ()) -> String {
-        return NSLocalizedString("Various artists", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 다음으로
-      /// 
-      /// Locales: ko
-      static func next(_: Void = ()) -> String {
-        return NSLocalizedString("Next", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 도움말
-      /// 
-      /// Locales: ko
-      static func help(_: Void = ()) -> String {
-        return NSLocalizedString("Help", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 디스크 번호
-      /// 
-      /// Locales: ko
-      static func discNumber(_: Void = ()) -> String {
-        return NSLocalizedString("Disc number", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 미디어 보관함 접근 불가
-      /// 
-      /// Locales: ko
-      static func accessDeniedToMediaLibrary(_: Void = ()) -> String {
-        return NSLocalizedString("Access denied to media library", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 미디어 보관함 접근이 거부되었습니다.
-      /// 
-      /// Locales: ko
-      static func mediaLibraryAccessRestrictedByCorporateOrParentalSettings(_: Void = ()) -> String {
-        return NSLocalizedString("Media library access restricted by corporate or parental settings", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 미디어 보관함의 권한이 필요합니다.
-      /// 
-      /// Locales: ko
-      static func tutorial_TITLE2(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_TITLE2", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 반갑습니다!
-      /// 
-      /// Locales: ko
-      static func tutorial_TITLE1(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_TITLE1", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 베타 버전이므로 여러 버그가 발생할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static func currentlyInBeta(_: Void = ()) -> String {
-        return NSLocalizedString("Currently in beta.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 변경할 이름을 입력해주세요.
-      /// 
-      /// Locales: ko
-      static func pleaseEnterNewName(_: Void = ()) -> String {
-        return NSLocalizedString("Please enter new name.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 보기 옵션
-      /// 
-      /// Locales: ko
-      static func displayOptions(_: Void = ()) -> String {
-        return NSLocalizedString("Display options", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 상단의 4개 항목이 탭 메뉴로 지정됩니다.
-      /// 
-      /// Locales: ko
-      static func theTopFourItemsWillBeAssignedToTheTabMenu(_: Void = ()) -> String {
-        return NSLocalizedString("The top four items will be assigned to the tab menu.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 새로운 재생목록
-      /// 
-      /// Locales: ko
-      static func newPlaylist(_: Void = ()) -> String {
-        return NSLocalizedString("New playlist", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 새로운 폴더
-      /// 
-      /// Locales: ko
-      static func createFolder(_: Void = ()) -> String {
-        return NSLocalizedString("Create folder", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 생성할 폴더 이름을 입력하세요.
-      /// 
-      /// Locales: ko
-      static func pleaseEnterANewFolderName(_: Void = ()) -> String {
-        return NSLocalizedString("Please enter a new folder name.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 선호도
-      /// 
-      /// Locales: ko
-      static func rating(_: Void = ()) -> String {
-        return NSLocalizedString("Rating", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 설정
-      /// 
-      /// Locales: ko
-      static func settings(_: Void = ()) -> String {
-        return NSLocalizedString("Settings", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 설정 앱으로 이동...
-      /// 
-      /// Locales: ko
-      static func goToSettingsApp(_: Void = ()) -> String {
-        return NSLocalizedString("Go to settings app...", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 아이템 삭제
-      /// 
-      /// Locales: ko
-      static func deleteItemS(_: Void = ()) -> String {
-        return NSLocalizedString("Delete item(s)", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 알 수 없는 아티스트
-      /// 
-      /// Locales: ko
-      static func unknownArtist(_: Void = ()) -> String {
-        return NSLocalizedString("Unknown artist", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 알 수 없는 앨범
-      /// 
-      /// Locales: ko
-      static func unknownAlbum(_: Void = ()) -> String {
-        return NSLocalizedString("Unknown album", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 알 수 없는 제목
-      /// 
-      /// Locales: ko
-      static func unknownTitle(_: Void = ()) -> String {
-        return NSLocalizedString("Unknown title", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 앨범 아티스트
-      /// 
-      /// Locales: ko
-      static func albumArtist(_: Void = ()) -> String {
-        return NSLocalizedString("Album Artist", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 앱 개발자
-      /// 
-      /// Locales: ko
-      static func developer(_: Void = ()) -> String {
-        return NSLocalizedString("Developer", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 앱 리뷰하기
-      /// 
-      /// Locales: ko
-      static func rateThisApp(_: Void = ()) -> String {
-        return NSLocalizedString("Rate this app", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 앱 아이콘 디자이너
-      /// 
-      /// Locales: ko
-      static func appIconDesigner(_: Void = ()) -> String {
-        return NSLocalizedString("App icon designer", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 에러가 발생했습니다.
-      /// 
-      /// Locales: ko
-      static func anErrorHasOccurred(_: Void = ()) -> String {
-        return NSLocalizedString("An error has occurred.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 여기에 파일을 옮기기 위해 위의 '이동' 버튼을 터치해주세요.
-      /// 
-      /// Locales: ko
-      static func touchTheMoveButtonAboveToMoveFilesHere(_: Void = ()) -> String {
-        return NSLocalizedString("Touch the 'Move' button above to move files here.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 윈컴이 (Wincomi)
-      /// 
-      /// Locales: ko
-      static func wincomi_NICKNAME(_: Void = ()) -> String {
-        return NSLocalizedString("WINCOMI_NICKNAME", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 음악 앱으로 이동...
-      /// 
-      /// Locales: ko
-      static func goToMusicApp(_: Void = ()) -> String {
-        return NSLocalizedString("Go to music app...", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 음악 추가
-      /// 
-      /// Locales: ko
-      static func addSongs(_: Void = ()) -> String {
-        return NSLocalizedString("Add songs", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 음악, 앨범, 아티스트를 검색합니다.
-      /// 
-      /// Locales: ko
-      static func searchSongsAlbumsAndArtists(_: Void = ()) -> String {
-        return NSLocalizedString("Search songs, albums, and artists.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 음악을 불러오기 위해 설정 앱에서 미디어 보관함 접근을 허용해주세요.
-      /// 
-      /// Locales: ko
-      static func mediaLibraryAccessDeniedByUser(_: Void = ()) -> String {
-        return NSLocalizedString("Media library access denied by user", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이 음악의 아티스트 보기
-      /// 
-      /// Locales: ko
-      static func showArtistOfThisSong(_: Void = ()) -> String {
-        return NSLocalizedString("Show artist of this song", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이 음악의 앨범 보기
-      /// 
-      /// Locales: ko
-      static func showAlbumOfThisSong(_: Void = ()) -> String {
-        return NSLocalizedString("Show album of this song", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이 음악의 정보 보기
-      /// 
-      /// Locales: ko
-      static func showSongInfo(_: Void = ()) -> String {
-        return NSLocalizedString("Show song info", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이 파일은 더 이상 즐겨찾기에 존재하지 않습니다,
-      /// 
-      /// Locales: ko
-      static func thisFileNoLongerExistsInFavorites(_: Void = ()) -> String {
-        return NSLocalizedString("This file no longer exists in favorites.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이 파일은 음악이 아닌 것 같습니다.
-      /// 
-      /// Locales: ko
-      static func thisFileDoesNotSeemToBeMusic(_: Void = ()) -> String {
-        return NSLocalizedString("This file does not seem to be music.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이동
-      /// 
-      /// Locales: ko
-      static func move(_: Void = ()) -> String {
-        return NSLocalizedString("Move", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 이름 변경
-      /// 
-      /// Locales: ko
-      static func rename(_: Void = ()) -> String {
-        return NSLocalizedString("Rename", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 임의 재생
-      /// 
-      /// Locales: ko
-      static func shuffle(_: Void = ()) -> String {
-        return NSLocalizedString("Shuffle", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 자주 묻는 질문과 팁
-      /// 
-      /// Locales: ko
-      static func tipsQnA(_: Void = ()) -> String {
-        return NSLocalizedString("Tips & QnA", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 재생
-      /// 
-      /// Locales: ko
-      static func play(_: Void = ()) -> String {
-        return NSLocalizedString("Play", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 재생목록 추가/제거는 애플 정책상 기본 음악 앱에서만 할 수 있습니다.
-      /// 
-      /// Locales: ko
-      static func youCanOnlyAddAndDeleteAPlaylistInDefaultMusicAppOnApplePolicy(_: Void = ()) -> String {
-        return NSLocalizedString("You can only add and delete a playlist in default music app on Apple policy.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 정렬 방식
-      /// 
-      /// Locales: ko
-      static func sortBy(_: Void = ()) -> String {
-        return NSLocalizedString("Sort by...", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 정말로 이 아이템을 삭제하시겠습니까?
-      /// 
-      /// Locales: ko
-      static func doYouReallyWantToDeleteThisItemS(_: Void = ()) -> String {
-        return NSLocalizedString("Do you really want to delete this item(s)?", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 정보
-      /// 
-      /// Locales: ko
-      static func about(_: Void = ()) -> String {
-        return NSLocalizedString("About", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 정보
-      /// 
-      /// Locales: ko
-      static func info(_: Void = ()) -> String {
-        return NSLocalizedString("Info", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 제목
-      /// 
-      /// Locales: ko
-      static func title(_: Void = ()) -> String {
-        return NSLocalizedString("Title", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 제발 구매 목록 삭제를 요청하지 마세요!
-      /// 
-      /// Locales: ko
-      static func tutorial_TITLE3(_: Void = ()) -> String {
-        return NSLocalizedString("TUTORIAL_TITLE3", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 주석
-      /// 
-      /// Locales: ko
-      static func comments(_: Void = ()) -> String {
-        return NSLocalizedString("Comments", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 즐겨찾기에 추가
-      /// 
-      /// Locales: ko
-      static func addToFavorites(_: Void = ()) -> String {
-        return NSLocalizedString("Add to favorites", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 즐겨찾기에 추가되었습니다.
-      /// 
-      /// Locales: ko
-      static func savedToFavorites(_: Void = ()) -> String {
-        return NSLocalizedString("Saved to favorites.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 즐겨찾기에 추가하고 싶은 항목을 왼쪽으로 스와이프하여 즐겨찾기에 추가하세요. 앨범을 추가할 경우 앨범을 길게 누르세요.
-      /// 
-      /// Locales: ko
-      static func addYourFavoritesSongs(_: Void = ()) -> String {
-        return NSLocalizedString("Add your favorites songs.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 즐겨찾기에서 제거
-      /// 
-      /// Locales: ko
-      static func removeFromFavorites(_: Void = ()) -> String {
-        return NSLocalizedString("Remove from favorites", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 지금 재생 중인 음악이 없습니다.
-      /// 
-      /// Locales: ko
-      static func thereIsNoMusicCurrentlyPlaying(_: Void = ()) -> String {
-        return NSLocalizedString("There is no music currently playing.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 최근 추가된 날짜
-      /// 
-      /// Locales: ko
-      static func persistentID(_: Void = ()) -> String {
-        return NSLocalizedString("PersistentID", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 최종 재생
-      /// 
-      /// Locales: ko
-      static func lastPlayed(_: Void = ()) -> String {
-        return NSLocalizedString("Last played", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 최종 재생
-      /// 
-      /// Locales: ko
-      static func lastPlayedDate(_: Void = ()) -> String {
-        return NSLocalizedString("LastPlayedDate", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 취소
-      /// 
-      /// Locales: ko
-      static func cancel(_: Void = ()) -> String {
-        return NSLocalizedString("Cancel", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 취침 예약
-      /// 
-      /// Locales: ko
-      static func sleepTimer(_: Void = ()) -> String {
-        return NSLocalizedString("Sleep timer", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 클립보드에 복사되었습니다.
-      /// 
-      /// Locales: ko
-      static func copiedToPasteboard(_: Void = ()) -> String {
-        return NSLocalizedString("Copied to pasteboard", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 탭 순서를 변경하기 위해 상단의 편집 버튼을 터치해주세요.
-      /// 
-      /// Locales: ko
-      static func touchTheEditButtonAtTheTopToChangeTheTabOrder(_: Void = ()) -> String {
-        return NSLocalizedString("Touch the Edit button at the top to change the tab order.", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 트랙
-      /// 
-      /// Locales: ko
-      static func track(_: Void = ()) -> String {
-        return NSLocalizedString("Track", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 파일 받기
-      /// 
-      /// Locales: ko
-      static func receiveFiles(_: Void = ()) -> String {
-        return NSLocalizedString("Receive files", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 파일 브라우저
-      /// 
-      /// Locales: ko
-      static func fileBrowser(_: Void = ()) -> String {
-        return NSLocalizedString("File browser", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 편집 앨범
-      /// 
-      /// Locales: ko
-      static func compilation(_: Void = ()) -> String {
-        return NSLocalizedString("Compilation", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 편집 앨범 모으기
-      /// 
-      /// Locales: ko
-      static func mergeCompilations(_: Void = ()) -> String {
-        return NSLocalizedString("Merge compilations", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 피드백 보내기
-      /// 
-      /// Locales: ko
-      static func sendFeedback(_: Void = ()) -> String {
-        return NSLocalizedString("Send feedback", bundle: R.hostingBundle, comment: "")
-      }
-      
-      /// ko translation: 확인
-      /// 
-      /// Locales: ko
-      static func oK(_: Void = ()) -> String {
-        return NSLocalizedString("OK", bundle: R.hostingBundle, comment: "")
-      }
-      
+      static func songInfoCompilation(preferredLanguages: [String]? = nil) -> String {
+        guard let preferredLanguages = preferredLanguages else {
+          return NSLocalizedString("songInfo.compilation", bundle: hostingBundle, comment: "")
+        }
+
+        guard let (_, bundle) = localeBundle(tableName: "Localizable", preferredLanguages: preferredLanguages) else {
+          return "songInfo.compilation"
+        }
+
+        return NSLocalizedString("songInfo.compilation", bundle: bundle, comment: "")
+      }
+
       fileprivate init() {}
     }
-    
+
     fileprivate init() {}
   }
-  
+
   fileprivate struct intern: Rswift.Validatable {
     fileprivate static func validate() throws {
       try _R.validate()
     }
-    
+
     fileprivate init() {}
   }
-  
+
   fileprivate class Class {}
-  
+
   fileprivate init() {}
 }
 
 struct _R: Rswift.Validatable {
   static func validate() throws {
-    try storyboard.validate()
+    #if os(iOS) || os(tvOS)
     try nib.validate()
+    #endif
+    #if os(iOS) || os(tvOS)
+    try storyboard.validate()
+    #endif
   }
-  
+
+  #if os(iOS) || os(tvOS)
   struct nib: Rswift.Validatable {
     static func validate() throws {
       try _TableViewButtonsView.validate()
     }
-    
+
     struct _AlbumSongCell: Rswift.NibResourceType, Rswift.ReuseIdentifierType {
       typealias ReusableType = AlbumSongCell
-      
+
       let bundle = R.hostingBundle
       let identifier = "AlbumSongCell"
       let name = "AlbumSongCell"
-      
+
       func firstView(owner ownerOrNil: AnyObject?, options optionsOrNil: [UINib.OptionsKey : Any]? = nil) -> AlbumSongCell? {
         return instantiate(withOwner: ownerOrNil, options: optionsOrNil)[0] as? AlbumSongCell
       }
-      
+
       fileprivate init() {}
     }
-    
+
     struct _TableViewButtonsView: Rswift.NibResourceType, Rswift.Validatable {
       let bundle = R.hostingBundle
       let name = "TableViewButtonsView"
-      
+
       func firstView(owner ownerOrNil: AnyObject?, options optionsOrNil: [UINib.OptionsKey : Any]? = nil) -> UIKit.UIView? {
         return instantiate(withOwner: ownerOrNil, options: optionsOrNil)[0] as? UIKit.UIView
       }
-      
+
       static func validate() throws {
         if UIKit.UIImage(named: "ContextualAction/play", in: R.hostingBundle, compatibleWith: nil) == nil { throw Rswift.ValidationError(description: "[R.swift] Image named 'ContextualAction/play' is used in nib 'TableViewButtonsView', but couldn't be loaded.") }
         if UIKit.UIImage(named: "ContextualAction/shuffle", in: R.hostingBundle, compatibleWith: nil) == nil { throw Rswift.ValidationError(description: "[R.swift] Image named 'ContextualAction/shuffle' is used in nib 'TableViewButtonsView', but couldn't be loaded.") }
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, tvOS 11.0, *) {
         }
       }
-      
+
       fileprivate init() {}
     }
-    
+
     fileprivate init() {}
   }
-  
+  #endif
+
+  #if os(iOS) || os(tvOS)
   struct storyboard: Rswift.Validatable {
     static func validate() throws {
+      #if os(iOS) || os(tvOS)
       try launchScreen.validate()
+      #endif
+      #if os(iOS) || os(tvOS)
       try main.validate()
+      #endif
+      #if os(iOS) || os(tvOS)
       try songInfo.validate()
+      #endif
     }
-    
+
+    #if os(iOS) || os(tvOS)
     struct launchScreen: Rswift.StoryboardResourceWithInitialControllerType, Rswift.Validatable {
       typealias InitialController = UIKit.UIViewController
-      
+
       let bundle = R.hostingBundle
       let name = "LaunchScreen"
-      
+
       static func validate() throws {
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, tvOS 11.0, *) {
         }
       }
-      
+
       fileprivate init() {}
     }
-    
+    #endif
+
+    #if os(iOS) || os(tvOS)
     struct main: Rswift.StoryboardResourceWithInitialControllerType, Rswift.Validatable {
       typealias InitialController = MainTabBarController
-      
+
       let bundle = R.hostingBundle
       let legacyFavoritesVC = StoryboardViewControllerResource<FavoritesTableViewController>(identifier: "LegacyFavoritesVC")
       let name = "Main"
       let nowPlayingVC = StoryboardViewControllerResource<NowPlayingVC>(identifier: "NowPlayingVC")
-      
+
       func legacyFavoritesVC(_: Void = ()) -> FavoritesTableViewController? {
         return UIKit.UIStoryboard(resource: self).instantiateViewController(withResource: legacyFavoritesVC)
       }
-      
+
       func nowPlayingVC(_: Void = ()) -> NowPlayingVC? {
         return UIKit.UIStoryboard(resource: self).instantiateViewController(withResource: nowPlayingVC)
       }
-      
+
       static func validate() throws {
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, tvOS 11.0, *) {
         }
         if _R.storyboard.main().legacyFavoritesVC() == nil { throw Rswift.ValidationError(description:"[R.swift] ViewController with identifier 'legacyFavoritesVC' could not be loaded from storyboard 'Main' as 'FavoritesTableViewController'.") }
         if _R.storyboard.main().nowPlayingVC() == nil { throw Rswift.ValidationError(description:"[R.swift] ViewController with identifier 'nowPlayingVC' could not be loaded from storyboard 'Main' as 'NowPlayingVC'.") }
       }
-      
+
       fileprivate init() {}
     }
-    
+    #endif
+
+    #if os(iOS) || os(tvOS)
     struct songInfo: Rswift.StoryboardResourceWithInitialControllerType, Rswift.Validatable {
       typealias InitialController = BaseNC
-      
+
       let bundle = R.hostingBundle
       let name = "SongInfo"
       let songInfo = StoryboardViewControllerResource<BaseNC>(identifier: "SongInfo")
-      
+
       func songInfo(_: Void = ()) -> BaseNC? {
         return UIKit.UIStoryboard(resource: self).instantiateViewController(withResource: songInfo)
       }
-      
+
       static func validate() throws {
-        if #available(iOS 11.0, *) {
+        if #available(iOS 11.0, tvOS 11.0, *) {
         }
         if _R.storyboard.songInfo().songInfo() == nil { throw Rswift.ValidationError(description:"[R.swift] ViewController with identifier 'songInfo' could not be loaded from storyboard 'SongInfo' as 'BaseNC'.") }
       }
-      
+
       fileprivate init() {}
     }
-    
+    #endif
+
     fileprivate init() {}
   }
-  
+  #endif
+
   fileprivate init() {}
 }

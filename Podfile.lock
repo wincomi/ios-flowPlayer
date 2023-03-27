@@ -1,10 +1,10 @@
 PODS:
   - DZNEmptyDataSet (1.8.1)
-  - InAppSettingsKit (2.10)
-  - R.swift (5.0.2):
-    - R.swift.Library (~> 5.0.0)
-  - R.swift.Library (5.0.0)
-  - StatusAlert (1.1.0)
+  - InAppSettingsKit (3.3.6)
+  - R.swift (6.1.0):
+    - R.swift.Library (~> 5.3.0)
+  - R.swift.Library (5.3.0)
+  - StatusAlert (1.1.1)
 
 DEPENDENCIES:
   - DZNEmptyDataSet
@@ -22,11 +22,11 @@ SPEC REPOS:
 
 SPEC CHECKSUMS:
   DZNEmptyDataSet: 9525833b9e68ac21c30253e1d3d7076cc828eaa7
-  InAppSettingsKit: d965e29be941eb19857271e4625de3fba6e23c9f
-  R.swift: 81455d81467763cbd3f4d79d938d05f4ac4c0228
-  R.swift.Library: 0bf390e729bc10bb2c9e4fb78bd043164a7be4ff
-  StatusAlert: 4d6dadebf5f7abd5648fa774ef3062f2f95cc4aa
+  InAppSettingsKit: 37df0b44132380d4c7db6fc7cded92997e29873a
+  R.swift: ec98ff71c4ab2f6fd01dd077e5afd15e63a4834c
+  R.swift.Library: 0fc583cb55a99e28901299cc451614cad1161962
+  StatusAlert: a18ec3c33d36a06d4479c1f2b15ffac67aaf7ab1
 
-PODFILE CHECKSUM: 9c26a7a2f16d086211f74e1be46b0cbce99a835a
+PODFILE CHECKSUM: d1d4a325bd65d49ad2f00d7ed6f11a6b6b3deeb8
 
-COCOAPODS: 1.10.1
+COCOAPODS: 1.12.0
